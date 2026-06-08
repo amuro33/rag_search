@@ -240,9 +240,13 @@
     </div>
     <input type="text" id="search" placeholder="query_id · description · author 검색" />
     <div class="spacer"></div>
+    <button class="btn" id="saveResultsBtn">결과 저장</button>
+    <button class="btn" id="loadResultsBtn">결과 불러오기</button>
+    <button class="btn danger" id="clearResultsBtn">결과 초기화</button>
     <button class="btn" id="clearSelBtn">선택 해제</button>
     <button class="btn" id="runAllBtn">전체 측정</button>
     <button class="btn primary" id="runSelBtn">선택 측정 (0)</button>
+    <input type="file" id="loadResultsFile" accept="application/json,.json" hidden />
   </div>
 
   <div class="tablewrap">

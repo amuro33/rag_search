@@ -5,6 +5,7 @@
 
   const $ = (s) => document.querySelector(s);
   const tbody = $('#tbody');
+  const STORAGE_KEY = 'rag_search_eval_results_v1';
 
   const state = {
     rows: [],
@@ -40,6 +41,57 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const enc = (s) => encodeURIComponent(String(s));
   const dec = (s) => decodeURIComponent(String(s || ''));
+
+  function serializeResults() {
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      passTopK: CONFIG.passTopK,
+      questionCount: MAX_SCORE,
+      results: [...state.results.entries()].map(([query_id, result]) => ({ query_id, result })),
+    };
+  }
+
+  function applyResults(payload) {
+    const rows = Array.isArray(payload && payload.results) ? payload.results : [];
+    const knownIds = new Set(state.rows.map((row) => row.query_id));
+    state.results.clear();
+    rows.forEach((item) => {
+      if (!item || !knownIds.has(item.query_id) || !item.result) return;
+      const detail = Array.isArray(item.result.detail) ? item.result.detail : [];
+      const score = Number(item.result.score);
+      state.results.set(item.query_id, {
+        score: Number.isFinite(score) ? score : detail.filter((d) => d && d.correct).length,
+        detail,
+      });
+    });
+  }
+
+  function persistResults() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeResults()));
+    } catch (err) {
+      console.warn('Failed to save results locally', err);
+    }
+  }
+
+  function restorePersistedResults() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      applyResults(JSON.parse(raw));
+      return state.results.size > 0;
+    } catch (err) {
+      console.warn('Failed to restore saved results', err);
+      return false;
+    }
+  }
+
+  function refreshAfterResultsChange() {
+    renderDash();
+    renderChips();
+    renderTable();
+  }
 
   function passesFilter(row) {
     const r = state.results.get(row.query_id);
@@ -263,6 +315,37 @@
   $('#clearSelBtn').addEventListener('click', () => {
     state.selected.clear(); renderTable(); renderDash(); updateRunBtn();
   });
+  $('#saveResultsBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(serializeResults(), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `rag-search-results-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  $('#loadResultsBtn').addEventListener('click', () => $('#loadResultsFile').click());
+  $('#loadResultsFile').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      applyResults(JSON.parse(await file.text()));
+      persistResults();
+      refreshAfterResultsChange();
+    } catch (err) {
+      alert('결과 파일을 읽을 수 없습니다.');
+      console.error(err);
+    } finally {
+      e.target.value = '';
+    }
+  });
+  $('#clearResultsBtn').addEventListener('click', () => {
+    if (!confirm('저장된 측정 결과를 모두 지울까요?')) return;
+    state.results.clear();
+    localStorage.removeItem(STORAGE_KEY);
+    refreshAfterResultsChange();
+  });
   $('#appFilter').addEventListener('change', (e) => { state.app = e.target.value; state.limit = INITIAL_LIMIT; renderTable(); });
   let searchT;
   $('#search').addEventListener('input', (e) => {
@@ -306,6 +389,7 @@
 
       const r = await evaluateRow(row);
       state.results.set(id, r);
+      persistResults();
       state._activeId = null;
       patchScore(id);
       renderDash();
@@ -353,6 +437,7 @@
   $('#topkPill').textContent = 'top-' + CONFIG.passTopK;
   loadRegistry().then((rows) => {
     state.rows = rows;
+    restorePersistedResults();
     renderDash(); renderChips(); renderAppFilter(); renderTable(); updateRunBtn();
   });
 })();
