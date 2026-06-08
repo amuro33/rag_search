@@ -32,6 +32,8 @@
   const scoreClass = (s) => (s == null ? 'idle' : 's' + s);
   const scoreText = (s) => (s == null ? '—' : s + '/3');
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const enc = (s) => encodeURIComponent(String(s));
+  const dec = (s) => decodeURIComponent(String(s || ''));
 
   function passesFilter(row) {
     const r = state.results.get(row.query_id);
@@ -151,9 +153,12 @@
           ? `${author} · ${content.replace(/\s+/g, ' ').slice(0, 140)}`
           : `${author} · ${res.tables}`;
         const title = content || meta;
+        const contentButton = content
+          ? `<button class="content-link meta" data-title="${esc(res.api_id)}" data-content="${esc(enc(content))}">${esc(meta)}</button>`
+          : `<span class="meta">${esc(meta)}</span>`;
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
-          <div class="resid" title="${esc(title)}">${esc(res.api_id)}<span class="meta">${esc(meta)}</span>${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
+          <div class="resid" title="${esc(title)}">${esc(res.api_id)}${contentButton}${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
           <div class="sim">${res.similarity.toFixed(4)}</div>
         </div>`;
       }).join('');
@@ -232,6 +237,12 @@
 
   tbody.addEventListener('click', (e) => {
     if (e.target.closest('#moreBtn')) { state.limit = Infinity; renderTable(); return; }
+    const contentBtn = e.target.closest('.content-link');
+    if (contentBtn) {
+      e.stopPropagation();
+      openContentModal(contentBtn.dataset.title, dec(contentBtn.dataset.content));
+      return;
+    }
     const chk = e.target.closest('input[data-chk]');
     if (chk) { e.stopPropagation(); toggleSelect(chk.dataset.chk); return; }
     const tr = e.target.closest('tr.row');
@@ -309,6 +320,29 @@
   $('#cancelBtn').addEventListener('click', () => { state.cancel = true; });
   $('#runSelBtn').addEventListener('click', () => run([...state.selected]));
   $('#runAllBtn').addEventListener('click', () => run(visibleRows().map((r) => r.query_id)));
+
+  function openContentModal(title, content) {
+    $('#contentModalTitle').textContent = title || 'content';
+    $('#contentModalPre').textContent = content || '';
+    $('#contentModal').classList.add('on');
+    $('#contentModal').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeContentModal() {
+    $('#contentModal').classList.remove('on');
+    $('#contentModal').setAttribute('aria-hidden', 'true');
+  }
+
+  $('#closeContentBtn').addEventListener('click', closeContentModal);
+  $('#contentModal').addEventListener('click', (e) => {
+    if (e.target.id === 'contentModal') closeContentModal();
+  });
+  $('#copyContentBtn').addEventListener('click', async () => {
+    const text = $('#contentModalPre').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
+  });
 
   /* ---------- init ---------- */
   $('#topkPill').textContent = 'top-' + CONFIG.passTopK;

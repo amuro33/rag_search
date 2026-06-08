@@ -177,6 +177,8 @@
   .resrow.hit .rank { color: var(--pass); font-weight: 600; }
   .resid { font-family: var(--mono); font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .resid .meta { font-family: var(--sans); color: var(--ink-3); font-size: 10.5px; margin-left: 8px; }
+  .resid .content-link { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; font: inherit; text-align: left; }
+  .resid .content-link:hover { color: var(--accent); text-decoration: underline; }
   .resrow.hit .resid { color: var(--pass); font-weight: 600; }
   .sim { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); text-align: right; }
   .tag-mini { font-size: 10px; font-family: var(--mono); padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
@@ -190,6 +192,15 @@
   .morebtn { font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--accent); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 7px 16px; cursor: pointer; }
   .morebtn:hover { background: var(--accent-soft); border-color: #c3d4f3; }
   .morehint { display: block; margin-top: 7px; font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+
+  .modal { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(20,28,40,.28); align-items: center; justify-content: center; padding: 24px; }
+  .modal.on { display: flex; }
+  .modal-card { width: min(720px, 100%); max-height: min(680px, 90vh); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 18px 50px rgba(20,28,40,.18); display: flex; flex-direction: column; }
+  .modal-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .modal-title { flex: 1; font-family: var(--mono); font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .modal-actions { display: flex; gap: 6px; }
+  .modal-body { padding: 14px; overflow: auto; }
+  .modal-pre { margin: 0; font-family: var(--sans); font-size: 12.5px; color: var(--ink); white-space: pre-wrap; line-height: 1.55; }
 </style>
 </head>
 <body>
@@ -246,6 +257,21 @@
         <tr><td colspan="6" class="skel">api_registry 불러오는 중…</td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div class="modal" id="contentModal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="contentModalTitle">
+    <div class="modal-head">
+      <div class="modal-title" id="contentModalTitle">content</div>
+      <div class="modal-actions">
+        <button class="btn" id="copyContentBtn" style="padding:5px 10px;">복사</button>
+        <button class="btn" id="closeContentBtn" style="padding:5px 10px;">닫기</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <pre class="modal-pre" id="contentModalPre"></pre>
+    </div>
   </div>
 </div>
 
