@@ -163,7 +163,7 @@
           : `<span class="meta">${esc(meta)}</span>`;
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
-          <div class="resid" title="${esc(title)}">${esc(res.api_id)}${contentButton}${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
+          <div class="resid" title="${esc(title)}">${esc(res.api_id)}${contentButton}</div>
           <div class="sim">${res.similarity.toFixed(4)}</div>
         </div>`;
       }).join('');
