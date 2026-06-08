@@ -9,6 +9,7 @@
 - `index.html`: 화면 레이아웃과 스타일
 - `app.js`: 필터, 선택, 측정, 점수 표시 등 UI 로직
 - `data-adapter.js`: 데이터/검색 어댑터
+- `mcp_server.py`: FastMCP `list_api_registry` 도구 뼈대
 
 ## 실행
 
@@ -103,3 +104,14 @@ const API_HEADERS = {
 채점은 각 `query_id`의 x-question 3개를 각각 `search_pg_vector(userquery)`로 검색하고, 정답 `query_id`가 `top-3` 안에 들어왔는지 기준으로 `3/3`, `2/3`처럼 계산합니다.
 
 필드명이 다르면 `data-adapter.js`의 `FIELD_MAP`만 수정하면 됩니다.
+
+## FastMCP 도구
+
+`mcp_server.py`에 `list_api_registry` 도구 뼈대를 추가했습니다.
+
+```bash
+pip install -r requirements.txt
+python mcp_server.py
+```
+
+실제 DB 조회는 `fetch_api_registry_rows()`만 구현하면 됩니다.
