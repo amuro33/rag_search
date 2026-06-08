@@ -40,8 +40,8 @@
       app: ['app', 'service', 'domain'],
       author: ['author', 'owner', 'created_by'],
       tables: ['tables', 'table_names', 'table_name'],
-      description: ['description', 'summary', 'content'],
-      summary: ['summary', 'description', 'content'],
+      description: ['description', 'desc'],
+      summary: ['summary'],
       questions: ['questions', 'eval_questions', 'test_questions'],
       content: ['content', 'document', 'text'],
     },
@@ -78,6 +78,19 @@
     return String(value);
   }
 
+  function parseContent(content) {
+    const lines = toText(content)
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    return {
+      description: lines[0] || '',
+      summary: lines[1] || '',
+      questions: lines.slice(2, 5),
+    };
+  }
+
   async function requestJson(url, options) {
     const res = await fetch(url, options);
     const bodyText = await res.text();
@@ -110,9 +123,13 @@
   function normalizeRegistryRow(raw) {
     const map = FIELD_MAP.registry;
     const queryId = toText(pick(raw, map.query_id)).trim();
-    const description = toText(pick(raw, map.description)).trim();
     const content = toText(pick(raw, map.content)).trim();
-    const questions = toArray(pick(raw, map.questions));
+    const parsed = parseContent(content);
+    const description = toText(pick(raw, map.description, parsed.description)).trim();
+    const summary = toText(pick(raw, map.summary, parsed.summary)).trim();
+    const questions = toArray(pick(raw, map.questions)).length
+      ? toArray(pick(raw, map.questions))
+      : parsed.questions;
 
     return {
       query_id: queryId,
@@ -120,7 +137,7 @@
       author: toText(pick(raw, map.author, '-')),
       tables: toText(pick(raw, map.tables, '-')),
       description: description || content.split('\n')[0] || queryId,
-      summary: toText(pick(raw, map.summary)),
+      summary,
       questions: questions.length ? questions : [description || content || queryId],
       content,
     };
