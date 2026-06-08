@@ -5,7 +5,6 @@
 
   const $ = (s) => document.querySelector(s);
   const tbody = $('#tbody');
-  const STORAGE_KEY = 'rag_search_eval_results_v1';
 
   const state = {
     rows: [],
@@ -65,26 +64,6 @@
         detail,
       });
     });
-  }
-
-  function persistResults() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeResults()));
-    } catch (err) {
-      console.warn('Failed to save results locally', err);
-    }
-  }
-
-  function restorePersistedResults() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
-      applyResults(JSON.parse(raw));
-      return state.results.size > 0;
-    } catch (err) {
-      console.warn('Failed to restore saved results', err);
-      return false;
-    }
   }
 
   function refreshAfterResultsChange() {
@@ -331,7 +310,6 @@
     if (!file) return;
     try {
       applyResults(JSON.parse(await file.text()));
-      persistResults();
       refreshAfterResultsChange();
     } catch (err) {
       alert('결과 파일을 읽을 수 없습니다.');
@@ -343,7 +321,6 @@
   $('#clearResultsBtn').addEventListener('click', () => {
     if (!confirm('저장된 측정 결과를 모두 지울까요?')) return;
     state.results.clear();
-    localStorage.removeItem(STORAGE_KEY);
     refreshAfterResultsChange();
   });
   $('#appFilter').addEventListener('change', (e) => { state.app = e.target.value; state.limit = INITIAL_LIMIT; renderTable(); });
@@ -389,7 +366,6 @@
 
       const r = await evaluateRow(row);
       state.results.set(id, r);
-      persistResults();
       state._activeId = null;
       patchScore(id);
       renderDash();
@@ -437,7 +413,6 @@
   $('#topkPill').textContent = 'top-' + CONFIG.passTopK;
   loadRegistry().then((rows) => {
     state.rows = rows;
-    restorePersistedResults();
     renderDash(); renderChips(); renderAppFilter(); renderTable(); updateRunBtn();
   });
 })();
