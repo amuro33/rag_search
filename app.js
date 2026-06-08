@@ -145,10 +145,14 @@
       const reslist = d.results.map((res, ri) => {
         const isHit = res.api_id === row.query_id;
         const isWrongTop = ri === 0 && !isHit;
-        const meta = `${esc(res.author)} · ${esc(res.tables)}`;
+        const content = String(res.content || '').trim();
+        const meta = content
+          ? content.replace(/\s+/g, ' ').slice(0, 140)
+          : `${res.author} · ${res.tables}`;
+        const title = content || meta;
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
-          <div class="resid">${esc(res.api_id)}<span class="meta">${meta}</span>${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
+          <div class="resid" title="${esc(title)}">${esc(res.api_id)}<span class="meta">${esc(meta)}</span>${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
           <div class="sim">${res.similarity.toFixed(4)}</div>
         </div>`;
       }).join('');
