@@ -2,7 +2,7 @@
 
 `api_registry` 검색 품질을 빠르게 확인하기 위한 정적 RAG 검색 평가 UI입니다.
 
-현재 버전은 mock 데이터와 mock `search_pg_vector` 결과를 사용합니다. 실제 백엔드에 연결할 때는 `data-adapter.js`만 교체하면 됩니다.
+현재 버전은 mock 데이터를 제거하고 실제 API를 호출하도록 구성했습니다. 마지막 연결 값은 `data-adapter.js` 상단에서 수정하면 됩니다.
 
 ## 구성
 
@@ -24,14 +24,53 @@ python3 -m http.server 8000
 
 ## 실제 검색 백엔드 연결
 
-`data-adapter.js`의 아래 공개 API를 실제 구현으로 바꾸면 됩니다.
+`data-adapter.js` 상단의 값을 실제 서버에 맞게 수정합니다.
 
 ```js
-RagEval.loadRegistry()
-RagEval.searchPgVector(userquery)
+const API_ENDPOINTS = {
+  registry: '/api/api-registry',
+  search: '/api/search-pg-vector',
+};
+
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  // Authorization: 'Bearer ...',
+};
 ```
 
-예상 데이터 형태:
+`registry` 응답은 배열, `{ rows: [...] }`, `{ data: [...] }`, `{ result: [...] }` 형태를 지원합니다.
+
+예상 registry row:
+
+```js
+{
+  query_id: 'MEMBER_PROFILE_GET',
+  app: '회원',
+  author: '김민준',
+  tables: 'member,member_auth',
+  description: '[회원] 회원 프로필 단건 조회',
+  summary: '회원 프로필 데이터를 조회하는 API',
+  questions: [
+    '회원 프로필 조회 기능이 필요한데 어떤 API를 호출하면 되나요?',
+    '회원 데이터를 조회하려면 어떤 걸 써야 해?',
+    '회원 프로필 관련 API 알려줘'
+  ],
+  content: '...'
+}
+```
+
+`search`는 `POST`로 호출합니다.
+
+요청 body:
+
+```js
+{
+  userquery: '회원 프로필 관련 API 알려줘',
+  limit: 5
+}
+```
+
+예상 search 응답:
 
 ```js
 {
@@ -48,3 +87,5 @@ RagEval.searchPgVector(userquery)
 ```
 
 채점은 각 API별 질문 3개에 대해 정답 `query_id`가 `top-3` 안에 들어왔는지 기준으로 계산합니다.
+
+필드명이 다르면 `data-adapter.js`의 `FIELD_MAP`만 수정하면 됩니다.

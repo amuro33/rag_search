@@ -165,6 +165,7 @@
   .qhead { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-bottom: 1px solid var(--line-2); }
   .qtag { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--ink-3); flex: none; }
   .qtext { flex: 1; color: var(--ink); font-size: 12.5px; }
+  .qtext .meta { display: block; color: var(--fail); font-family: var(--mono); font-size: 10.5px; margin-top: 3px; }
   .verdict { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px; white-space: nowrap; flex: none; }
   .verdict.ok { color: var(--pass); background: var(--pass-bg); }
   .verdict.no { color: var(--fail); background: var(--fail-bg); }
@@ -200,7 +201,7 @@
       <h1>RAG 검색 평가</h1>
       <div class="sub">api_registry · pgvector · bge-m3 (1024d)</div>
     </div>
-    <span class="pill" id="envPill">mock 데이터 · search_pg_vector</span>
+    <span class="pill" id="envPill">live API · search_pg_vector</span>
     <div class="spacer"></div>
     <span class="pill">채점 기준 <b id="topkPill">top-3</b></span>
   </header>

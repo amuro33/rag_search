@@ -57,7 +57,7 @@
     const dist = [0, 0, 0, 0];
     state.results.forEach((r) => {
       measured++; sumScore += r.score; dist[r.score]++;
-      totalQ += 3; correctQ += r.score;
+      totalQ += r.total || 0; correctQ += r.score;
     });
     const passRate = measured ? Math.round((dist[3] / measured) * 100) : 0;
     const qRate = totalQ ? Math.round((correctQ / totalQ) * 100) : 0;
@@ -149,14 +149,15 @@
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
           <div class="resid">${esc(res.api_id)}<span class="meta">${meta}</span>${isHit ? '<span class="tag-mini hit">정답</span>' : (isWrongTop ? '<span class="tag-mini miss">엉뚱</span>' : '')}</div>
-          <div class="sim">${res.similarity.toFixed(4)}</div>
+          <div class="sim">${Number(res.similarity || 0).toFixed(4)}</div>
         </div>`;
       }).join('');
-      const rankTxt = d.rank ? `${d.rank}순위` : 'top-5 밖';
+      const rankTxt = d.error ? '검색 실패' : (d.rank ? `${d.rank}순위` : 'top-5 밖');
+      const errorText = d.error ? `<span class="meta">${esc(d.error)}</span>` : '';
       return `<div class="qcard">
         <div class="qhead">
           <span class="qtag">Q${i + 1}</span>
-          <span class="qtext">${esc(d.q)}</span>
+          <span class="qtext">${esc(d.q)}${errorText}</span>
           <span class="verdict ${d.correct ? 'ok' : 'no'}">${d.correct ? '정답 · ' + rankTxt : '오답 · ' + rankTxt}</span>
         </div>
         <div class="reslist">${reslist}</div>
@@ -256,14 +257,21 @@
     const detail = [];
     for (let qi = 0; qi < row.questions.length; qi++) {
       const q = row.questions[qi];
-      const res = await searchPgVector(q);
+      let res;
+      try {
+        res = await searchPgVector(q);
+      } catch (err) {
+        res = { result: [] };
+        detail.push({ q, correct: false, rank: null, results: [], error: err.message || String(err) });
+        continue;
+      }
       const ids = res.result.map((r) => r.api_id);
       const idx = ids.indexOf(row.query_id);
       const correct = idx > -1 && idx < CONFIG.passTopK;
       detail.push({ q, correct, rank: idx > -1 ? idx + 1 : null, results: res.result });
     }
     const score = detail.filter((d) => d.correct).length;
-    return { score, detail };
+    return { score, total: row.questions.length, detail };
   }
 
   async function run(ids) {
@@ -307,8 +315,16 @@
 
   /* ---------- init ---------- */
   $('#topkPill').textContent = 'top-' + CONFIG.passTopK;
-  loadRegistry().then((rows) => {
-    state.rows = rows;
-    renderDash(); renderChips(); renderAppFilter(); renderTable(); updateRunBtn();
-  });
+  const envPill = $('#envPill');
+  if (envPill) envPill.textContent = 'live API · search_pg_vector';
+
+  loadRegistry()
+    .then((rows) => {
+      state.rows = rows;
+      renderDash(); renderChips(); renderAppFilter(); renderTable(); updateRunBtn();
+    })
+    .catch((err) => {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">api_registry 로딩 실패: ${esc(err.message || err)}</td></tr>`;
+      renderDash(); renderChips(); updateRunBtn();
+    });
 })();
