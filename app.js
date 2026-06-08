@@ -11,7 +11,7 @@
     results: new Map(),     // query_id -> { score, detail:[{q,correct,rank,results}] }
     selected: new Set(),    // query_id
     expanded: new Set(),    // query_id
-    filter: 'all',          // all | unmeasured | s3 | le2 | s0
+    filter: 'all',          // all | unmeasured | full | partial | s0
     app: '',
     q: '',
     running: false,
@@ -19,18 +19,24 @@
     limit: 50,
   };
   const INITIAL_LIMIT = 50;
+  const MAX_SCORE = CONFIG.questionCount || 5;
 
   const FILTERS = [
     ['all', '전체'],
     ['unmeasured', '미측정'],
-    ['s3', '만점 3/3'],
-    ['le2', '오답 포함 (≤2)'],
-    ['s0', '전부 오답 0/3'],
+    ['full', `만점 ${MAX_SCORE}/${MAX_SCORE}`],
+    ['partial', `오답 포함 (<${MAX_SCORE})`],
+    ['s0', `전부 오답 0/${MAX_SCORE}`],
   ];
 
   /* ---------- helpers ---------- */
-  const scoreClass = (s) => (s == null ? 'idle' : 's' + s);
-  const scoreText = (s) => (s == null ? '—' : s + '/3');
+  const scoreClass = (s) => {
+    if (s == null) return 'idle';
+    if (s === 0) return 's0';
+    if (s === MAX_SCORE) return 's3';
+    return s >= Math.ceil(MAX_SCORE / 2) ? 's2' : 's1';
+  };
+  const scoreText = (s) => (s == null ? '—' : s + '/' + MAX_SCORE);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const enc = (s) => encodeURIComponent(String(s));
   const dec = (s) => decodeURIComponent(String(s || ''));
@@ -39,8 +45,8 @@
     const r = state.results.get(row.query_id);
     const s = r ? r.score : null;
     if (state.filter === 'unmeasured' && s != null) return false;
-    if (state.filter === 's3' && s !== 3) return false;
-    if (state.filter === 'le2' && (s == null || s > 2)) return false;
+    if (state.filter === 'full' && s !== MAX_SCORE) return false;
+    if (state.filter === 'partial' && (s == null || s >= MAX_SCORE)) return false;
     if (state.filter === 's0' && s !== 0) return false;
     if (state.app && row.app !== state.app) return false;
     if (state.q) {
@@ -56,48 +62,47 @@
     const total = state.rows.length;
     const sel = state.selected.size;
     let measured = 0, sumScore = 0, totalQ = 0, correctQ = 0;
-    const dist = [0, 0, 0, 0];
+    const dist = Array(MAX_SCORE + 1).fill(0);
     state.results.forEach((r) => {
       measured++; sumScore += r.score; dist[r.score]++;
-      totalQ += 3; correctQ += r.score;
+      totalQ += MAX_SCORE; correctQ += r.score;
     });
-    const passRate = measured ? Math.round((dist[3] / measured) * 100) : 0;
+    const passRate = measured ? Math.round((dist[MAX_SCORE] / measured) * 100) : 0;
     const qRate = totalQ ? Math.round((correctQ / totalQ) * 100) : 0;
     const distPct = (n) => (measured ? (n / measured) * 100 : 0);
+    const partialCount = dist.slice(1, MAX_SCORE).reduce((sum, n) => sum + n, 0);
 
     $('#dash').innerHTML = `
       <div class="stat"><div class="k">전체 API</div><div class="v">${total}</div></div>
       <div class="stat"><div class="k">선택됨</div><div class="v accent">${sel}</div></div>
       <div class="stat"><div class="k">측정 완료</div><div class="v">${measured}<small> / ${total}</small></div></div>
-      <div class="stat"><div class="k">만점(3/3) 비율</div><div class="v pass">${passRate}<small>%</small></div></div>
+      <div class="stat"><div class="k">만점(${MAX_SCORE}/${MAX_SCORE}) 비율</div><div class="v pass">${passRate}<small>%</small></div></div>
       <div class="stat"><div class="k">문항 정답률</div><div class="v">${qRate}<small>%</small></div></div>
       <div class="dist">
         <div class="k">점수 분포 ${measured ? `· ${measured}건 측정` : '· 미측정'}</div>
         <div class="distbar">
-          <span class="seg3" style="width:${distPct(3)}%"></span>
-          <span class="seg2" style="width:${distPct(2)}%"></span>
-          <span class="seg1" style="width:${distPct(1)}%"></span>
+          <span class="seg3" style="width:${distPct(dist[MAX_SCORE])}%"></span>
+          <span class="seg2" style="width:${distPct(partialCount)}%"></span>
           <span class="seg0" style="width:${distPct(0)}%"></span>
         </div>
         <div class="distlegend">
-          <span><i class="seg3"></i>3/3 ${dist[3]}</span>
-          <span><i class="seg2"></i>2/3 ${dist[2]}</span>
-          <span><i class="seg1"></i>1/3 ${dist[1]}</span>
-          <span><i class="seg0"></i>0/3 ${dist[0]}</span>
+          <span><i class="seg3"></i>${MAX_SCORE}/${MAX_SCORE} ${dist[MAX_SCORE]}</span>
+          <span><i class="seg2"></i>1-${MAX_SCORE - 1}/${MAX_SCORE} ${partialCount}</span>
+          <span><i class="seg0"></i>0/${MAX_SCORE} ${dist[0]}</span>
         </div>
       </div>`;
   }
 
   /* ---------- chips / toolbar ---------- */
   function renderChips() {
-    const counts = { all: 0, unmeasured: 0, s3: 0, le2: 0, s0: 0 };
+    const counts = { all: 0, unmeasured: 0, full: 0, partial: 0, s0: 0 };
     state.rows.forEach((row) => {
       counts.all++;
       const r = state.results.get(row.query_id);
       const s = r ? r.score : null;
       if (s == null) counts.unmeasured++;
-      if (s === 3) counts.s3++;
-      if (s != null && s <= 2) counts.le2++;
+      if (s === MAX_SCORE) counts.full++;
+      if (s != null && s < MAX_SCORE) counts.partial++;
       if (s === 0) counts.s0++;
     });
     $('#chips').innerHTML = FILTERS.map(([k, label]) =>

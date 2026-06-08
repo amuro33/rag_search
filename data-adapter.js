@@ -14,6 +14,7 @@
 
   const CONFIG = {
     passTopK: 3,
+    questionCount: 5,
     resultSize: 5,
   };
 
@@ -87,7 +88,7 @@
     return {
       description: lines[0] || '',
       summary: lines[1] || '',
-      questions: lines.slice(2, 5),
+      questions: lines.slice(2, 2 + CONFIG.questionCount),
     };
   }
 
@@ -127,9 +128,9 @@
     const parsed = parseContent(content);
     const description = toText(pick(raw, map.description, parsed.description)).trim();
     const summary = toText(pick(raw, map.summary, parsed.summary)).trim();
-    const questions = toArray(pick(raw, map.questions)).length
-      ? toArray(pick(raw, map.questions))
-      : parsed.questions;
+    const explicitQuestions = toArray(pick(raw, map.questions));
+    const questions = (explicitQuestions.length ? explicitQuestions : parsed.questions)
+      .slice(0, CONFIG.questionCount);
 
     return {
       query_id: queryId,

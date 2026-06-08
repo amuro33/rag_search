@@ -59,6 +59,8 @@ const API_HEADERS = {
 3번째 줄: x-question 1
 4번째 줄: x-question 2
 5번째 줄: x-question 3
+6번째 줄: x-question 4
+7번째 줄: x-question 5
 ```
 
 예상 registry row:
@@ -101,7 +103,7 @@ const API_HEADERS = {
 }
 ```
 
-채점은 각 `query_id`의 x-question 3개를 각각 `search_pg_vector(userquery)`로 검색하고, 정답 `query_id`가 `top-3` 안에 들어왔는지 기준으로 `3/3`, `2/3`처럼 계산합니다.
+채점은 각 `query_id`의 x-question 5개를 각각 `search_pg_vector(userquery)`로 검색하고, 정답 `query_id`가 `top-3` 안에 들어왔는지 기준으로 `5/5`, `4/5`처럼 계산합니다.
 
 필드명이 다르면 `data-adapter.js`의 `FIELD_MAP`만 수정하면 됩니다.
 
