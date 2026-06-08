@@ -146,9 +146,10 @@
         const isHit = res.api_id === row.query_id;
         const isWrongTop = ri === 0 && !isHit;
         const content = String(res.content || '').trim();
+        const author = String(res.author || '-');
         const meta = content
-          ? content.replace(/\s+/g, ' ').slice(0, 140)
-          : `${res.author} · ${res.tables}`;
+          ? `${author} · ${content.replace(/\s+/g, ' ').slice(0, 140)}`
+          : `${author} · ${res.tables}`;
         const title = content || meta;
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
