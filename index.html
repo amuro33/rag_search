@@ -167,16 +167,16 @@
   .verdict.ok { color: var(--pass); background: var(--pass-bg); }
   .verdict.no { color: var(--fail); background: var(--fail-bg); }
   .reslist { padding: 4px 0; }
-  .resrow { display: grid; grid-template-columns: 30px minmax(0, 1fr) 84px; align-items: start; gap: 10px; padding: 5px 13px; font-size: 12px; }
+  .resrow { display: grid; grid-template-columns: 30px minmax(0, 1fr) 84px; align-items: center; gap: 10px; padding: 5px 13px; font-size: 12px; }
   .resrow + .resrow { border-top: 1px solid var(--line-2); }
   .resrow.hit { background: var(--pass-bg); }
   .resrow.wrongtop { background: #fbf6ee; }
   .rank { font-family: var(--mono); font-size: 11px; color: var(--ink-3); text-align: center; font-variant-numeric: tabular-nums; }
   .resrow.hit .rank { color: var(--pass); font-weight: 600; }
-  .resid { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; font-family: var(--mono); font-size: 12px; color: var(--ink); }
-  .resid .res-api { flex: none; white-space: nowrap; }
-  .resid .meta { min-width: 0; font-family: var(--sans); color: var(--ink-3); font-size: 10.5px; overflow-wrap: anywhere; }
-  .resid .content-link { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; font: inherit; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+  .resid { display: grid; grid-template-columns: minmax(220px, max-content) minmax(0, 1fr); align-items: baseline; gap: 8px; min-width: 0; font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  .resid .res-api { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .resid .meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--sans); color: var(--ink-3); font-size: 10.5px; }
+  .resid .content-link { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; font: inherit; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .resid .content-link:hover { color: var(--accent); text-decoration: underline; }
   .resrow.hit .resid { color: var(--pass); font-weight: 600; }
   .sim { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
