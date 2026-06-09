@@ -194,7 +194,7 @@
           : `<span class="meta">${esc(meta)}</span>`;
         return `<div class="resrow ${isHit ? 'hit' : ''} ${isWrongTop ? 'wrongtop' : ''}">
           <div class="rank">${ri + 1}</div>
-          <div class="resid" title="${esc(title)}">${esc(res.api_id)}${contentButton}</div>
+          <div class="resid" title="${esc(title)}"><span class="res-api">${esc(res.api_id)}</span>${contentButton}</div>
           <div class="sim">${res.similarity.toFixed(4)}</div>
         </div>`;
       }).join('');
